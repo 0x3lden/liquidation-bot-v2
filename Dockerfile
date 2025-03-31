@@ -1,26 +1,34 @@
 # syntax=docker/dockerfile:1
 
 ARG PYTHON_VERSION=3.12.5
-FROM 310118226683.dkr.ecr.eu-west-1.amazonaws.com/python:${PYTHON_VERSION} as base
-
-# Copy the project files
-COPY . .
+FROM python:${PYTHON_VERSION} as base
 
 RUN apt-get update && apt-get install -y nodejs npm
 
-# Initialize git repository
-RUN git init && \
-    git add -A && \
-    git commit -m "Initial commit"
+WORKDIR /forge-repo
 
 # Manually clone submodules
 RUN mkdir -p lib/forge-std && \
     git clone https://github.com/foundry-rs/forge-std.git lib/forge-std
 
+# Copy the project files
+COPY . /forge-repo
+
+RUN curl -L https://foundry.paradigm.xyz | bash
+
+RUN bash -c "source ~/.bashrc && foundryup"
+
+# Initialize git repository
+RUN git init
+RUN git config --global user.email "you@example.com"
+RUN git config --global user.name "Your Name"
+RUN git add --all
+RUN git commit -m "Initial commit"
+
 # Run Forge commands
-RUN forge install --no-commit
-RUN forge update
-RUN forge build
+RUN bash -c "source ~/.bashrc && forge install --no-commit"
+RUN bash -c "source ~/.bashrc && forge update"
+RUN bash -c "source ~/.bashrc && forge build"
 
 # Create a non-privileged user
 ARG UID=10001
@@ -33,7 +41,7 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-RUN mkdir -p /app/logs /app/state
+RUN mkdir -p app/logs app/state
 
 # Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -44,12 +52,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 WORKDIR /redstone_script
 COPY redstone_script/package.json redstone_script/package-lock.json* ./
 RUN npm ci
-WORKDIR /
+WORKDIR /forge-repo
 
 # Set correct permissions
-RUN chown -R appuser:appuser /app && \
-    chmod -R 755 /app && \
-    chmod 777 /app/logs /app/state
+RUN chown -R appuser:appuser /forge-repo/ && \
+    chmod -R 755 /forge-repo/ && \
+    mkdir -p /forge-repo/logs /forge-repo/state && \
+    chmod 777 /forge-repo/logs /forge-repo/state
 
 USER appuser
 
