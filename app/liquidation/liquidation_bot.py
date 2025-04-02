@@ -243,6 +243,8 @@ class Account:
             self.value_borrowed = get_btc_usd_quote(liability_value, self.config)
 
             logger.info("Account: value borrowed: %s", self.value_borrowed)
+            
+        logger.info("Getting the following liability and collateral values: %s, %s for address %s", liability_value, collateral_value, self.address)
 
         # Special case for 0 values on balance or liability
         if liability_value == 0:
@@ -755,16 +757,20 @@ class PullOracleHandler:
     def get_account_values_with_pyth_and_redstone_simulation(vault, account_address, pyth_feed_ids, redstone_feed_ids, config: ChainConfig):
         pyth_update_data = PullOracleHandler.get_pyth_update_data(pyth_feed_ids)
         pyth_update_fee = PullOracleHandler.get_pyth_update_fee(pyth_update_data, config)
-
+            
         redstone_addresses, redstone_update_data = PullOracleHandler.get_redstone_update_payloads(redstone_feed_ids)
 
         liquidator = config.liquidator
+        
+        logger.info("Calling Pyth with the following data: %s, %s", pyth_update_data, pyth_update_fee)
+        logger.info("Calling Redstone with the following data: %s, %s", redstone_update_data, redstone_addresses)
 
         result = liquidator.functions.simulatePythAndRedstoneAccountStatus(
             [pyth_update_data], pyth_update_fee, redstone_update_data, redstone_addresses, vault.address, account_address
             ).call({
                 "value": pyth_update_fee
             })
+            
         return result[0], result[1]
 
     @staticmethod
