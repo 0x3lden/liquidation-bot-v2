@@ -1,5 +1,8 @@
 global:
   ## RISK PARAMETERS ##
+  # Target vault address to monitor (set to empty string to monitor all vaults)
+  TARGET_VAULT_ADDRESS: "0xc5976e0356f0A3Ce8307fF08C88bB05933F88761"
+
   # Health score bounds for update interval frequency
   HS_LIQUIDATION: 1.0
   HS_HIGH_RISK: 1.02

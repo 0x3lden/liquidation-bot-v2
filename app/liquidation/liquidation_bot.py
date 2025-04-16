@@ -433,6 +433,12 @@ class AccountMonitor:
             address (str): The address of the account to update.
             vault_address (str): The address of the vault associated with the account.
         """
+        # Check if this vault is the one we want to monitor
+        if hasattr(self.config, 'TARGET_VAULT_ADDRESS') and self.config.TARGET_VAULT_ADDRESS:
+            if vault_address.lower() != self.config.TARGET_VAULT_ADDRESS.lower():
+                logger.info("AccountMonitor: Skipping account %s as vault %s is not the target vault %s",
+                            address, vault_address, self.config.TARGET_VAULT_ADDRESS)
+                return
 
         # If the vault is not already tracked in the list, create it
         if vault_address not in self.vaults:
